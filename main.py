@@ -16,43 +16,64 @@ app.add_middleware(
 class SentimentRequest(BaseModel):
     sentences: List[str]
 
+
 @app.get("/")
 @app.head("/")
-async def root():
+async def health_check():
     return {"status": "ok"}
 
+
+@app.post("/")
 @app.post("/sentiment")
 async def sentiment(request: SentimentRequest):
-    positive_words = [
+
+    positive_words = {
         "love", "great", "excellent", "good", "happy",
         "awesome", "amazing", "fantastic", "wonderful",
-        "best", "like"
-    ]
+        "best", "like", "nice", "perfect", "enjoy",
+        "brilliant", "outstanding", "superb"
+    }
 
-    negative_words = [
+    negative_words = {
         "hate", "terrible", "bad", "awful", "sad",
         "worst", "horrible", "angry", "disappointed",
-        "poor"
-    ]
+        "poor", "useless", "boring", "annoying",
+        "disgusting", "pathetic", "failure"
+    }
 
     results = []
 
     for sentence in request.sentences:
         text = sentence.lower()
 
-        pos = sum(word in text for word in positive_words)
-        neg = sum(word in text for word in negative_words)
+        positive_score = sum(
+            1 for word in positive_words if word in text
+        )
 
-        if pos > neg:
-            sentiment = "happy"
-        elif neg > pos:
-            sentiment = "sad"
+        negative_score = sum(
+            1 for word in negative_words if word in text
+        )
+
+        if positive_score > negative_score:
+            label = "happy"
+        elif negative_score > positive_score:
+            label = "sad"
         else:
-            sentiment = "neutral"
+            label = "neutral"
 
         results.append({
             "sentence": sentence,
-            "sentiment": sentiment
+            "sentiment": label
         })
 
     return {"results": results}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000
+    )
