@@ -19,7 +19,7 @@ class SentimentRequest(BaseModel):
 
 @app.get("/")
 @app.head("/")
-async def health_check():
+async def health():
     return {"status": "ok"}
 
 
@@ -28,17 +28,20 @@ async def health_check():
 async def sentiment(request: SentimentRequest):
 
     positive_words = {
-        "love", "great", "excellent", "good", "happy",
-        "awesome", "amazing", "fantastic", "wonderful",
-        "best", "like", "nice", "perfect", "enjoy",
-        "brilliant", "outstanding", "superb"
+        "love","great","excellent","good","happy","awesome","amazing",
+        "fantastic","wonderful","best","like","nice","perfect","enjoy",
+        "brilliant","outstanding","superb","excited","delighted",
+        "pleased","satisfied","positive","success","successful",
+        "beautiful","fun","joy","joyful","smile","glad"
     }
 
     negative_words = {
-        "hate", "terrible", "bad", "awful", "sad",
-        "worst", "horrible", "angry", "disappointed",
-        "poor", "useless", "boring", "annoying",
-        "disgusting", "pathetic", "failure"
+        "hate","terrible","bad","awful","sad","worst","horrible",
+        "angry","disappointed","poor","useless","boring","annoying",
+        "disgusting","pathetic","failure","unhappy","upset",
+        "miserable","depressed","frustrated","negative","problem",
+        "broken","fail","failed","loss","losing","pain","cry",
+        "crying","regret","regrettable"
     }
 
     results = []
@@ -46,17 +49,12 @@ async def sentiment(request: SentimentRequest):
     for sentence in request.sentences:
         text = sentence.lower()
 
-        positive_score = sum(
-            1 for word in positive_words if word in text
-        )
+        pos = sum(1 for word in positive_words if word in text)
+        neg = sum(1 for word in negative_words if word in text)
 
-        negative_score = sum(
-            1 for word in negative_words if word in text
-        )
-
-        if positive_score > negative_score:
+        if pos > neg:
             label = "happy"
-        elif negative_score > positive_score:
+        elif neg > pos:
             label = "sad"
         else:
             label = "neutral"
@@ -71,9 +69,4 @@ async def sentiment(request: SentimentRequest):
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=8000
-    )
+    uvicorn.run(app, host="0.0.0.0", port=8000)
