@@ -8,6 +8,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -21,35 +22,37 @@ async def root():
     return {"status": "ok"}
 
 @app.post("/sentiment")
-async def sentiment(req: SentimentRequest):
+async def sentiment(request: SentimentRequest):
+    positive_words = [
+        "love", "great", "excellent", "good", "happy",
+        "awesome", "amazing", "fantastic", "wonderful",
+        "best", "like"
+    ]
+
+    negative_words = [
+        "hate", "terrible", "bad", "awful", "sad",
+        "worst", "horrible", "angry", "disappointed",
+        "poor"
+    ]
+
     results = []
 
-    positive_words = {
-        "love","great","excellent","good","happy","awesome",
-        "amazing","fantastic","wonderful","best","like"
-    }
-
-    negative_words = {
-        "sad","bad","terrible","awful","hate","worst",
-        "poor","horrible","angry","disappointed"
-    }
-
-    for sentence in req.sentences:
+    for sentence in request.sentences:
         text = sentence.lower()
 
         pos = sum(word in text for word in positive_words)
         neg = sum(word in text for word in negative_words)
 
         if pos > neg:
-            label = "happy"
+            sentiment = "happy"
         elif neg > pos:
-            label = "sad"
+            sentiment = "sad"
         else:
-            label = "neutral"
+            sentiment = "neutral"
 
         results.append({
             "sentence": sentence,
-            "sentiment": label
+            "sentiment": sentiment
         })
 
     return {"results": results}
