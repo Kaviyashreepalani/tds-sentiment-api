@@ -8,7 +8,6 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -16,41 +15,41 @@ app.add_middleware(
 class SentimentRequest(BaseModel):
     sentences: List[str]
 
-positive_words = {
-    "love","great","awesome","excellent","amazing","good","happy",
-    "wonderful","fantastic","best","like","enjoy","nice","perfect"
-}
-
-negative_words = {
-    "hate","bad","terrible","awful","horrible","sad","worst",
-    "angry","poor","disappointed","disappointing","boring","ugly"
-}
-
-def detect_sentiment(text: str) -> str:
-    t = text.lower()
-
-    pos = sum(1 for w in positive_words if w in t)
-    neg = sum(1 for w in negative_words if w in t)
-
-    if pos > neg:
-        return "happy"
-    elif neg > pos:
-        return "sad"
-    else:
-        return "neutral"
+@app.get("/")
+@app.head("/")
+async def root():
+    return {"status": "ok"}
 
 @app.post("/sentiment")
-def sentiment(req: SentimentRequest):
-    return {
-        "results": [
-            {
-                "sentence": sentence,
-                "sentiment": detect_sentiment(sentence)
-            }
-            for sentence in req.sentences
-        ]
+async def sentiment(req: SentimentRequest):
+    results = []
+
+    positive_words = {
+        "love","great","excellent","good","happy","awesome",
+        "amazing","fantastic","wonderful","best","like"
     }
 
-@app.get("/")
-def root():
-    return {"message": "Sentiment API running"}
+    negative_words = {
+        "sad","bad","terrible","awful","hate","worst",
+        "poor","horrible","angry","disappointed"
+    }
+
+    for sentence in req.sentences:
+        text = sentence.lower()
+
+        pos = sum(word in text for word in positive_words)
+        neg = sum(word in text for word in negative_words)
+
+        if pos > neg:
+            label = "happy"
+        elif neg > pos:
+            label = "sad"
+        else:
+            label = "neutral"
+
+        results.append({
+            "sentence": sentence,
+            "sentiment": label
+        })
+
+    return {"results": results}
